@@ -1279,7 +1279,11 @@ async def receive_premium_username(message: Message, state: FSMContext):
         "📸 Chekni shu botga yuboring."
     )
 @dp.message(PremiumFlow.waiting_receipt, F.photo)
-async def receive_premium_receipt(message: Message, state: FSMContext):
+async def receive_premium_receipt(
+    message: Message,
+    state: FSMContext,
+    bot: Bot
+):
     data = await state.get_data()
 
     order_id = data.get("order_id")
