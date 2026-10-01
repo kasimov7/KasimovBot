@@ -1257,7 +1257,10 @@ async def receive_premium_username(message: Message, state: FSMContext):
         "premium_card"
     )
 
-    await state.update_data(order_id=order_id)
+    await state.update_data(
+    order_id=order_id,
+    premium_username=f"@{username}"
+)
     await state.set_state(PremiumFlow.waiting_receipt)
 
     await message.answer(
@@ -1275,7 +1278,57 @@ async def receive_premium_username(message: Message, state: FSMContext):
         "to'lovingiz avtomatik rad etiladi.\n\n"
         "📸 Chekni shu botga yuboring."
     )
+@dp.message(PremiumFlow.waiting_receipt, F.photo)
+async def receive_premium_receipt(message: Message, state: FSMContext):
+    data = await state.get_data()
 
+    order_id = data.get("order_id")
+    product = data.get("premium_product")
+    price = data.get("premium_price")
+
+    username = message.from_user.username
+    file_id = message.photo[-1].file_id
+
+    # Buyurtmaga chekni saqlash
+    db_set_receipt(order_id, file_id)
+
+    # Admin uchun xabar
+    caption = (
+        "💎 <b>YANGI TELEGRAM PREMIUM TO'LOV</b>\n\n"
+        f"📦 Buyurtma: <b>#{order_id}</b>\n"
+        f"👤 Mijoz: @{username or 'username yo‘q'}\n"
+        f"💎 Mahsulot: <b>{product}</b>\n"
+        f"👤 Premium username: <b>{data.get('premium_username', 'noma’lum')}</b>\n"
+        f"💰 Summa: <b>{price:,} so'm</b>\n\n"
+        "👇 To'lovni tekshiring:"
+    )
+
+    builder = InlineKeyboardBuilder()
+
+    builder.button(
+        text="✅ Tasdiqlash",
+        callback_data=f"adm_ok_{order_id}"
+    )
+    builder.button(
+        text="❌ Rad etish",
+        callback_data=f"adm_no_{order_id}"
+    )
+
+    builder.adjust(2)
+
+    await bot.send_photo(
+        ADMIN_ID,
+        file_id,
+        caption=caption,
+        reply_markup=builder.as_markup()
+    )
+
+    await state.clear()
+
+    await message.answer(
+        "✅ Chekingiz qabul qilindi!\n\n"
+        "⏳ Admin to'lovni tekshirmoqda."
+    )
 # =========================================================
 # BUYURTMALAR
 # =========================================================
