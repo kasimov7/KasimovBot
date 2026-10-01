@@ -26,7 +26,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 
 ADMIN_USERNAME = "javohirkasimov"
 
-ADMIN_CHAT = int(os.getenv("ADMIN_ID"))
+ADMIN_CHAT = int(os.getenv("5303864442"))
 
 CARD_NUMBER = os.getenv("CARD_NUMBER")
 CARD_OWNER = os.getenv("CARD_OWNER", "JAVOHIR QOSIMOV")
