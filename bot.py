@@ -253,8 +253,25 @@ class OrderFlow(StatesGroup):
 
     waiting_player_id = State()
     waiting_receipt = State()
+class PremiumFlow(StatesGroup):
+    waiting_username = State()
+    waiting_receipt = State()
 
 
+PREMIUM_PRODUCTS = {
+    "3": {
+        "name": "Telegram Premium 3 oy",
+        "price": 182_000
+    },
+    "6": {
+        "name": "Telegram Premium 6 oy",
+        "price": 235_000
+    },
+    "12": {
+        "name": "Telegram Premium 12 oy",
+        "price": 405_000
+    }
+}
 # =========================================================
 # YORDAMCHI
 # =========================================================
@@ -1153,23 +1170,64 @@ async def stars(
 # =========================================================
 
 @dp.callback_query(F.data == "premium")
-async def premium(
-    callback: CallbackQuery
-):
+async def premium(callback: CallbackQuery):
+    builder = InlineKeyboardBuilder()
+
+    builder.button(
+        text="💎 3 oy — 182 000 so'm",
+        callback_data="premium_3"
+    )
+    builder.button(
+        text="💎 6 oy — 235 000 so'm",
+        callback_data="premium_6"
+    )
+    builder.button(
+        text="💎 12 oy — 405 000 so'm",
+        callback_data="premium_12"
+    )
+    builder.button(
+        text="🔙 Orqaga",
+        callback_data="back"
+    )
+
+    builder.adjust(1)
 
     await safe_edit(
-
         callback,
-
         "💎 <b>Telegram Premium</b>\n\n"
-        "Premium bo'limi keyingi bosqichda "
-        "qo'shiladi.",
-
-        back_button()
+        "Premium muddatini tanlang:",
+        builder.as_markup()
     )
 
     await callback.answer()
 
+@dp.callback_query(F.data.startswith("premium_"))
+async def choose_premium(callback: CallbackQuery, state: FSMContext):
+    duration = callback.data.replace("premium_", "")
+
+    if duration not in PREMIUM_PRODUCTS:
+        await callback.answer("Noto'g'ri tanlov!", show_alert=True)
+        return
+
+    product = PREMIUM_PRODUCTS[duration]
+
+    await state.update_data(
+        premium_duration=duration,
+        premium_product=product["name"],
+        premium_price=product["price"]
+    )
+
+    await state.set_state(PremiumFlow.waiting_username)
+
+    await safe_edit(
+        callback,
+        f"💎 <b>{product['name']}</b>\n\n"
+        "👤 Premium oladigan Telegram username'ni yuboring.\n\n"
+        "Masalan: <code>@username</code>",
+        back_button()
+    )
+
+    await callback.answer()
 
 # =========================================================
 # BUYURTMALAR
