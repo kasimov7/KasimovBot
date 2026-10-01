@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sqlite3
+import os
 from datetime import datetime
 
 from aiogram import Bot, Dispatcher, F
@@ -27,8 +28,8 @@ ADMIN_USERNAME = "javohirkasimov"
 
 ADMIN_CHAT = int(os.getenv("ADMIN_ID"))
 
-CARD_NUMBER = "9860350142272912"
-CARD_OWNER = "JAVOHIR QOSIMOV"
+CARD_NUMBER = os.getenv("CARD_NUMBER")
+CARD_OWNER = os.getenv("CARD_OWNER", "JAVOHIR QOSIMOV")
 
 # TEST UCHUN 60 UC NARXI
 # Bu 12 900 so'mning avtomatik kursi EMAS.
@@ -1278,19 +1279,37 @@ async def soon(
 
 async def main():
 
+    from aiohttp import web
+
     db_init()
 
     bot = Bot(
         token=TOKEN
     )
 
+    async def health(request):
+        return web.Response(text="Kasimov TopUp bot ishlayapti!")
+
+    app = web.Application()
+    app.router.add_get("/", health)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+
+    port = int(os.getenv("PORT", "10000"))
+
+    site = web.TCPSite(
+        runner,
+        "0.0.0.0",
+        port
+    )
+
+    await site.start()
+
     print("Kasimov TopUp bot ishga tushdi!")
 
-    await dp.start_polling(
-        bot
-    )
+    await dp.start_polling(bot)
 
 
 if __name__ == "__main__":
-
     asyncio.run(main())
