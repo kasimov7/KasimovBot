@@ -1229,6 +1229,53 @@ async def choose_premium(callback: CallbackQuery, state: FSMContext):
 
     await callback.answer()
 
+@dp.message(PremiumFlow.waiting_username, F.text)
+async def receive_premium_username(message: Message, state: FSMContext):
+    username = message.text.strip()
+
+    if username.startswith("@"):
+        username = username[1:]
+
+    if not username or " " in username:
+        await message.answer(
+            "❌ Username noto'g'ri.\n\n"
+            "Masalan: <code>@username</code>"
+        )
+        return
+
+    data = await state.get_data()
+
+    product = data["premium_product"]
+    price = data["premium_price"]
+
+    order_id = db_create_order(
+        message.from_user.id,
+        message.from_user.username,
+        product,
+        price,
+        f"@{username}",
+        "premium_card"
+    )
+
+    await state.update_data(order_id=order_id)
+    await state.set_state(PremiumFlow.waiting_receipt)
+
+    await message.answer(
+        f"💎 <b>{product}</b>\n\n"
+        f"👤 Username: <code>@{username}</code>\n"
+        f"💰 Summa: <b>{price:,} so'm</b>\n\n"
+        f"💳 <b>To'lov uchun karta:</b>\n"
+        f"<code>{CARD_NUMBER}</code>\n"
+        f"👤 Karta egasi: <b>{CARD_OWNER}</b>\n\n"
+        "⚠️ <b>Muhim:</b>\n"
+        "Faqat belgilangan summani o'tkazing.\n"
+        "Agar kam bo'lsa admin tomonidan rad etiladi.\n\n"
+        "⏰ <b>10 daqiqa ichida chekni yuboring!</b>\n"
+        "10 daqiqa ichida chek yuborilmasa, "
+        "to'lovingiz avtomatik rad etiladi.\n\n"
+        "📸 Chekni shu botga yuboring."
+    )
+
 # =========================================================
 # BUYURTMALAR
 # =========================================================
